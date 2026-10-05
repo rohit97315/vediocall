@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
                 router("/home")
             }
         } catch (err) {
-            console.error("Login failed:", err.response?.data?.message || err.message);        }
+            console.error("Login failed:", err.response?.data?.message || err.message);   throw err;     }
     }
 
     const getHistoryOfUser = async () => {
@@ -69,6 +69,7 @@ export const AuthProvider = ({ children }) => {
         } catch
          (err) {
             console.error("unable to get history",err.message);
+            throw err;
         }
     }
 
@@ -81,6 +82,7 @@ export const AuthProvider = ({ children }) => {
             return request
         }catch(err) {
             console.error("unable to add user to history",err.message);
+            throw err;
         }
     }
 
