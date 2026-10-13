@@ -1,6 +1,6 @@
 import axios from "axios";
 import httpStatus from "http-status";
-import { Children, createContext ,useContext,useState} from "react";
+import {  createContext ,useContext,useState} from "react";
 
 import {useNavigate} from "react-router-dom"
 
@@ -19,8 +19,8 @@ const client = axios.create({
 
 
 export const AuthProvider = ({children}) => {
-    const authcontext = useContext(AuthContext);
-    const[userDAta ,setUserData] = useState(authcontext);
+    // const authcontext = useContext(AuthContext);
+    const[userDAta ,setUserData] = useState(null);
 
 
     const router = useNavigate();
@@ -70,7 +70,7 @@ export const AuthProvider = ({children}) => {
 
     const getHistoryOfUser = async() => {
         try{
-            let request = client.get("/get_all_activity",{
+            let request =await client.get("/get_all_activity",{
                 params:{
                     token:localStorage.getItem("token")
                 }
