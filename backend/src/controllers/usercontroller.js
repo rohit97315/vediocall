@@ -37,7 +37,7 @@ const login = async(req,res)=>{
 }
 
 const register = async(req,res)=>{
-    const {username, email,password} = req.body;
+    const {username, name,password} = req.body;
 
     try{
         const findUser = await UserVedio.findOne({username});

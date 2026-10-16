@@ -9,6 +9,6 @@ const userSchema = new Schema(
     }
 )
 
-const UserVedio = mongoose.model("UserS", userSchema);
+const UserVedio = mongoose.model("VedioUser", userSchema);
 
 export {UserVedio};
