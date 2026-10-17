@@ -84,10 +84,143 @@ export default function VedioMeetComponent() {
     const getPermissions = async() => {
         try{
 
+            const videoPermission = await navigator.mediaDevices.getUserMedia({video:true});
+            if(videoPermission){
+                setVideoAvailable(true);
+                console.log("video permission granted");
+            }else{
+                setVideoAvailable(false);
+                console.log("video permission denied");
+            }
+
+
+            const audioPermission = await navigator.mediaDevices.getUserMedia({audio:true});
+            if(audioPermission){
+                setAudioAvailable(true);
+                console.log("audio permission granted");
+            }else{
+                setAudioAvailable(false);
+                console.log("audio permission denied");
+            }
+
+            if (navigator.mediaDevices.getDisplayMedia) {
+                setScreenAvailable(true);
+            } else {
+                setScreenAvailable(false);
+            }
+
+            if(videoAvailable || audioAvailable){
+                const userMediaStream = navigator.mediaDevices.getUserMedia({video:videoAvailable, audio:audioAvailable});
+                if(userMediaStream){
+                    window.localStream = userMediaStream;
+                    if(videoRef.current){
+                        videoRef.current.srcObject = userMediaStream;
+                    }
+                }
+            }
+
         }catch(e){
             console.log(e);
         }
     }
+
+
+    useEffect(() => {
+        if(video !== undefined && audio !== undefined){
+            getUserMedia();
+            console.log("setstate has ",video,audio);
+        }
+    },[video,audio])
+
+    let getMedia = () => {
+        setVideo(videoAvailable);
+        setAudio(audioAvailable);
+        connectToSocketServer();
+    }
+
+    let getUserMediaSuccess = (stream) => {
+        try{
+            window.localStream.getTracks().forEach(track => track.stop());
+        }catch(e){
+            console.log(e);
+        }
+
+        window.localStream = stream;
+        localVideoref.current.srcObject = stream;
+
+        for(let id in connections){
+            if(id === socketIdRef.current) continue;
+
+            // connections[id].addTrack(window.localStream).   -> this way is deprecated
+
+            window.localStream.getTracks().forEach(track => {
+                connections[id].addTrack(track, window.localStream);
+            });
+
+            connections[id].createOffer().then((description) => {
+                console.log(description);
+                connections[id].setLocalDescription(description)
+                .then(() => {
+                    socketRef.current.emit('signal',id,JSON.stringify({'sdp':connections[id].localDescription}))
+                })
+                .catch((e) => console.log(e))
+            })
+
+        }
+
+
+        stream.getTracks().forEach(track => track.onended =()=> {
+            setVideo(false);
+            setAudio(false);
+
+            try{
+                let tracks = localVideoref.current.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+            }catch(e){
+                console.log(e);
+            }
+            let blackSilence = (...args) => new MediaStream([black(...args),silence()]);
+            window.localStream = blackSilence();
+            localVideoref.current.srcObject = window.localStream;
+
+
+            for (let id in connections) {
+                window.localStream.getTracks().forEach(track => {
+                connections[id].addTrack(track, window.localStream);
+                });
+
+    
+                connections[id].createOffer().then((description) => {
+                    connections[id].setLocalDescription(description)
+                    .then(() => {
+                        socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
+                    })
+                    .catch(e => console.log(e))
+                })
+            }
+
+        })
+    }
+
+
+    let getUserMedia = () => {
+        if((video && videoAvailable) || (audio && audioAvailable)){
+            navigator.mediaDevices.getUserMedia({video:video,audio:audio})
+            .then(getUserMediaSuccess)
+            .then((stream) => { })
+            .catch((e) => console.log(e))
+        }else{
+            try{
+                let tracks = localVideoref.current.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+            }catch(e){
+                console.log(e);
+            }
+        }
+    }
+    
+
+
 
 
 
